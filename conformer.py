@@ -251,7 +251,7 @@ class ExP():
             tmp_data = timg[cls_idx]
             tmp_label = label[cls_idx]
 
-            tmp_aug_data = np.zeros((int(self.batch_size / 4), 1, 16, 128))
+            tmp_aug_data = np.zeros((int(self.batch_size / 4), 1, 22, 1000))
             for ri in range(int(self.batch_size / 4)):
                 for rj in range(8):
                     rand_idx = np.random.randint(0, tmp_data.shape[0], 8)
