@@ -369,9 +369,9 @@ class ExP():
                 label = Variable(label.cuda().type(self.LongTensor))
 
                 # data augmentation
-                aug_data, aug_label = self.interaug(self.allData, self.allLabel)
-                img = torch.cat((img, aug_data))
-                label = torch.cat((label, aug_label))
+                # aug_data, aug_label = self.interaug(self.allData, self.allLabel)
+                # img = torch.cat((img, aug_data))
+                # label = torch.cat((label, aug_label))
 
 
                 tok, outputs = self.model(img)
