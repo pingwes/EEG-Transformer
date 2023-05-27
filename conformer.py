@@ -22,7 +22,7 @@ import time
 import datetime
 import sys
 import scipy.io
-
+import csv
 import torchvision.transforms as transforms
 from torchvision.utils import save_image, make_grid
 
@@ -251,7 +251,7 @@ class ExP():
             tmp_data = timg[cls_idx]
             tmp_label = label[cls_idx]
 
-            tmp_aug_data = np.zeros((int(self.batch_size / 4), 1, 22, 1000))
+            tmp_aug_data = np.zeros((int(self.batch_size / 4), 1, 16, 128))
             for ri in range(int(self.batch_size / 4)):
                 for rj in range(8):
                     rand_idx = np.random.randint(0, tmp_data.shape[0], 8)
@@ -274,42 +274,58 @@ class ExP():
 
     def get_source_data(self):
 
-        # train data
-        self.total_data = scipy.io.loadmat(self.root + 'A0%dT.mat' % self.nSub)
-        self.train_data = self.total_data['data']
-        self.train_label = self.total_data['label']
+        # Open the CSV file
+        csvfile = open('./Neurosity/data.csv', 'r')
 
-        self.train_data = np.transpose(self.train_data, (2, 1, 0))
-        self.train_data = np.expand_dims(self.train_data, axis=1)
-        self.train_label = np.transpose(self.train_label)
+        # Create a CSV reader object
+        csvreader = csv.reader(csvfile)
 
-        self.allData = self.train_data
-        self.allLabel = self.train_label[0]
+        # Extract the column into a list
+        eeg = []
+        labels = []
+        for i, row in enumerate(csvreader):
+            eeg_objects = row[0].split("],")
 
-        shuffle_num = np.random.permutation(len(self.allData))
-        self.allData = self.allData[shuffle_num, :, :, :]
-        self.allLabel = self.allLabel[shuffle_num]
+            eegObjects = []
+            for eeg_object in eeg_objects:
+                eeg_object = eeg_object.split(",")
 
-        # test data
-        self.test_tmp = scipy.io.loadmat(self.root + 'A0%dE.mat' % self.nSub)
-        self.test_data = self.test_tmp['data']
-        self.test_label = self.test_tmp['label']
+                eegObject = []
 
-        self.test_data = np.transpose(self.test_data, (2, 1, 0))
-        self.test_data = np.expand_dims(self.test_data, axis=1)
-        self.test_label = np.transpose(self.test_label)
+                for float_value in eeg_object:
+                    floatValue = float(float_value.strip("[] "))
+                    eegObject.append(floatValue)
 
-        self.testData = self.test_data
-        self.testLabel = self.test_label[0]
+                eegObjects.append(eegObject)
 
+            eeg.append([eegObjects])
+            labels.append(int(row[1]))  # replace 2 with the index of the column you want
+
+        # Convert the list to a NumPy array
+        eeg = np.array(eeg)
+        labels = np.array(labels).astype(np.uint8)
+
+        shuffle_num = np.random.permutation(len(eeg))
+        eeg = eeg[shuffle_num, :, :, :]
+        labels = labels[shuffle_num]
+
+        train_data = eeg[:25]
+        train_labels = labels[:25]
+
+        test_data = eeg[25:]
+        test_labels = labels[:25]
 
         # standardize
-        target_mean = np.mean(self.allData)
-        target_std = np.std(self.allData)
-        self.allData = (self.allData - target_mean) / target_std
-        self.testData = (self.testData - target_mean) / target_std
+        target_mean = np.mean(eeg)
+        target_std = np.std(eeg)
+        train_data = (train_data - target_mean) / target_std
+        test_data = (test_data - target_mean) / target_std
 
-        # data shape: (trial, conv channel, electrode channel, time samples)
+        self.allData = train_data
+        self.allLabel = train_labels
+        self.testData = test_data
+        self.testLabel = test_labels
+
         return self.allData, self.allLabel, self.testData, self.testLabel
 
 
@@ -430,7 +446,6 @@ def main():
         exp = ExP(i + 1)
 
         bestAcc, averAcc, Y_true, Y_pred = exp.train()
-        print('THE BEST ACCURACY IS ' + str(bestAcc))
         result_write.write('Subject ' + str(i + 1) + ' : ' + 'Seed is: ' + str(seed_n) + "\n")
         result_write.write('Subject ' + str(i + 1) + ' : ' + 'The best accuracy is: ' + str(bestAcc) + "\n")
         result_write.write('Subject ' + str(i + 1) + ' : ' + 'The average accuracy is: ' + str(averAcc) + "\n")
