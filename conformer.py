@@ -309,11 +309,11 @@ class ExP():
         eeg = eeg[shuffle_num, :, :, :]
         labels = labels[shuffle_num]
 
-        train_data = eeg[:25]
-        train_labels = labels[:25]
+        train_data = eeg[:50]
+        train_labels = labels[:50]
 
-        test_data = eeg[25:]
-        test_labels = labels[:25]
+        test_data = eeg[50:]
+        test_labels = labels[:50]
 
         # standardize
         target_mean = np.mean(eeg)
