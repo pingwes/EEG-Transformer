@@ -71,9 +71,9 @@ class PatchEmbedding(nn.Module):
         super().__init__()
 
         self.shallownet = nn.Sequential(
-            nn.Conv2d(1, 80, (1, 25), (1, 1)),
-            nn.Conv2d(80, 80, (22, 1), (1, 1)),
-            nn.BatchNorm2d(80),
+            nn.Conv2d(1, 40, (1, 25), (1, 1)),
+            nn.Conv2d(40, 40, (22, 1), (1, 1)),
+            nn.BatchNorm2d(40),
             nn.ELU(),
             nn.AvgPool2d((1, 75), (1, 15)),  # pooling acts as slicing to obtain 'patch' along the time dimension as in ViT
             nn.Dropout(0.5),
@@ -186,10 +186,10 @@ class ClassificationHead(nn.Sequential):
             nn.Linear(emb_size, n_classes)
         )
         self.fc = nn.Sequential(
-            nn.Linear(2440, 256),
+            nn.Linear(880, 50),
             nn.ELU(),
             nn.Dropout(0.5),
-            nn.Linear(256, 32),
+            nn.Linear(50, 32),
             nn.ELU(),
             nn.Dropout(0.3),
             nn.Linear(32, 4)
@@ -246,15 +246,17 @@ class ExP():
     def interaug(self, timg, label):  
         aug_data = []
         aug_label = []
-        for cls4aug in range(4):
+        for cls4aug in range(1):
             cls_idx = np.where(label == cls4aug + 1)
             tmp_data = timg[cls_idx]
+            
+            
             tmp_label = label[cls_idx]
 
-            tmp_aug_data = np.zeros((int(self.batch_size / 4), 1, 32, 125))
+            tmp_aug_data = np.zeros((int(self.batch_size / 4), 1, 32, 128))
             for ri in range(int(self.batch_size / 4)):
-                for rj in range(8):
-                    rand_idx = np.random.randint(0, tmp_data.shape[0], 8)
+                for rj in range(1):
+                    rand_idx = np.random.randint(0, tmp_data.shape[0], 2)
                     tmp_aug_data[ri, :, :, rj * 125:(rj + 1) * 125] = tmp_data[rand_idx[rj], :, :,
                                                                       rj * 125:(rj + 1) * 125]
 
@@ -299,7 +301,8 @@ class ExP():
                 eegObjects.append(eegObject)
 
             eeg.append([eegObjects])
-            labels.append(int(row[1]))  # replace 2 with the index of the column you want
+
+            labels.append(int(row[1]) + 1)  # replace 2 with the index of the column you want
 
         # Convert the list to a NumPy array
         eeg = np.array(eeg)
@@ -369,9 +372,9 @@ class ExP():
                 label = Variable(label.cuda().type(self.LongTensor))
 
                 # data augmentation
-                # aug_data, aug_label = self.interaug(self.allData, self.allLabel)
-                # img = torch.cat((img, aug_data))
-                # label = torch.cat((label, aug_label))
+                aug_data, aug_label = self.interaug(self.allData, self.allLabel)
+                img = torch.cat((img, aug_data))
+                label = torch.cat((label, aug_label))
 
 
                 tok, outputs = self.model(img)
@@ -421,7 +424,6 @@ class ExP():
         self.log_write.write('The best accuracy is: ' + str(bestAcc) + "\n")
 
         return bestAcc, averAcc, Y_true, Y_pred
-        # writer.close()
 
 
 def main():
@@ -429,7 +431,7 @@ def main():
     aver = 0
     result_write = open("./results/sub_result.txt", "w")
 
-    for i in range(9):
+    for i in range(1):
         starttime = datetime.datetime.now()
 
 
