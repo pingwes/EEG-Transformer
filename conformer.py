@@ -246,7 +246,7 @@ class ExP():
     def interaug(self, timg, label):  
         aug_data = []
         aug_label = []
-        for cls4aug in range(1):
+        for cls4aug in range(4):
             cls_idx = np.where(label == cls4aug + 1)
             tmp_data = timg[cls_idx]
             
@@ -255,8 +255,8 @@ class ExP():
 
             tmp_aug_data = np.zeros((int(self.batch_size / 4), 1, 32, 128))
             for ri in range(int(self.batch_size / 4)):
-                for rj in range(1):
-                    rand_idx = np.random.randint(0, tmp_data.shape[0], 2)
+                for rj in range(4):
+                    rand_idx = np.random.randint(0, tmp_data.shape[0], 8)
                     tmp_aug_data[ri, :, :, rj * 125:(rj + 1) * 125] = tmp_data[rand_idx[rj], :, :,
                                                                       rj * 125:(rj + 1) * 125]
 
@@ -277,7 +277,7 @@ class ExP():
     def get_source_data(self):
 
         # Open the CSV file
-        csvfile = open('./Neurosity/data.csv', 'r')
+        csvfile = open('./Neurosity/smaller_merged_4.csv', 'r')
 
         # Create a CSV reader object
         csvreader = csv.reader(csvfile)
@@ -289,6 +289,7 @@ class ExP():
             eeg_objects = row[0].split("],")
 
             eegObjects = []
+            
             for eeg_object in eeg_objects:
                 eeg_object = eeg_object.split(",")
 
@@ -302,7 +303,7 @@ class ExP():
 
             eeg.append([eegObjects])
 
-            labels.append(int(row[1]) + 1)  # replace 2 with the index of the column you want
+            labels.append(int(row[1]))  # replace 2 with the index of the column you want
 
         # Convert the list to a NumPy array
         eeg = np.array(eeg)
@@ -312,11 +313,13 @@ class ExP():
         eeg = eeg[shuffle_num, :, :, :]
         labels = labels[shuffle_num]
 
-        train_data = eeg[:50]
-        train_labels = labels[:50]
+        print("length of eeg: " + str(len(eeg)))
+        train_data = eeg[500:]
+        train_labels = labels[500:]
 
-        test_data = eeg[50:]
-        test_labels = labels[:50]
+        test_data = eeg[:500]
+        test_labels = labels[:500]
+        print("test_labels: " + str(test_labels))
 
         # standardize
         target_mean = np.mean(eeg)
@@ -344,6 +347,9 @@ class ExP():
 
         test_data = torch.from_numpy(test_data)
         test_label = torch.from_numpy(test_label - 1)
+
+        print("test_data size: " + str(test_data.size()))
+        print("test_label size: " + str(test_label.size()))
         test_dataset = torch.utils.data.TensorDataset(test_data, test_label)
         self.test_dataloader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=self.batch_size, shuffle=True)
 
@@ -476,3 +482,4 @@ if __name__ == "__main__":
     print(time.asctime(time.localtime(time.time())))
     main()
     print(time.asctime(time.localtime(time.time())))
+    
